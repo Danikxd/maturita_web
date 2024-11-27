@@ -1,0 +1,7 @@
+.truncated-description {
+    white-space: nowrap; /* Prevents text from wrapping */
+    overflow: hidden; /* Ensures overflow text is hidden */
+    text-overflow: ellipsis; /* Adds the ellipsis (...) */
+    display: block; /* Ensures this works for inline elements */
+    max-width: 100%; /* Adjusts width to fit the column */
+  }
