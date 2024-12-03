@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, use } from "react";
 import axios from "axios";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./styles.css"; 
+import { createClient } from "@supabase/supabase-js";
 
 interface SeriesItem {
   id: string;
@@ -16,9 +17,15 @@ interface SeriesItem {
   end: string;
 }
 
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
+);
+
 export default function SeriesPage() {
   const [date, setDate] = useState<Date>(new Date());
   const [series, setSeries] = useState<SeriesItem[]>([]);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   const fetchSeries = useCallback(async (selectedDate: Date) => {
     const formattedDate = selectedDate.toISOString().split("T")[0];
@@ -34,7 +41,27 @@ export default function SeriesPage() {
 
   useEffect(() => {
     fetchSeries(date);
+
+
+   
   }, [date, fetchSeries]);
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error("Error fetching user:", error.message);
+      } else {
+        setUserEmail(user?.email || null);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+
+
+
+
 
   const groupedSeries = series.reduce<Record<string, SeriesItem[]>>(
     (acc, item) => {
@@ -55,6 +82,16 @@ export default function SeriesPage() {
   });
 
   return (
+
+    <div style={{ position: "relative", padding: "20px", maxWidth: "400px", margin: "0 auto" }}>
+      {/* Email uživatele v pravém horním rohu */}
+      <div style={{ position: "fixed", top: "10px", right: "10px", fontSize: "14px" }}>
+      {userEmail ? `Logged in as: ${userEmail}` : <a href="/login" style={{ marginLeft: "10px", textDecoration: "underline" }}>
+          Login
+        </a>}
+     
+      </div>
+
     <div className="container mt-4">
       <h1 className="text-center mb-4">TV Series by Date</h1>
       <div className="d-flex justify-content-center mb-3">
@@ -105,6 +142,7 @@ export default function SeriesPage() {
           </div>
         ))}
       </div>
+    </div>
     </div>
   );
 }
