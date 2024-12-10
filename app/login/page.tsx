@@ -26,7 +26,7 @@ export default function LoginPage() {
     const fetchUser = async () => {
       const { data: { user }, error } = await supabase.auth.getUser();
       if (error) {
-        console.error("Error fetching user:", error.message);
+      //  console.error("Error fetching user:", error.message);
       } else {
         setUserEmail(user?.email || null);
       }
