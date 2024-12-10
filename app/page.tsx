@@ -121,7 +121,10 @@ export default function SeriesPage() {
     <div className="relative p-4 max-w-7xl mx-auto">
       <div className="fixed top-2 right-4 text-sm">
         {userEmail ? (
-          `Logged in as: ${userEmail}`
+         <>
+           <a href="/notifications" className="text-blue-500 hover:underline">My Recordings</a>
+           <span>Logged in as: {userEmail}</span>
+         </>
         ) : (
           <a href="/login" className="text-blue-500 underline">
             Login
