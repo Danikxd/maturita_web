@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, use } from "react";
 import axios from "axios";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -70,15 +70,19 @@ export default function SeriesPage() {
       return;
     }
 
+
     if (selectedSeries) {
 
-       
+        const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
 
       try {
         const response = await axios.post(
           "http://localhost:3030/notifications",
           {
-            id: userID,
+            id: user?.id,
             channel_id: Number(selectedSeries.channel_id),
             title: selectedSeries.title,
           },
