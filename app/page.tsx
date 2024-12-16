@@ -4,7 +4,9 @@ import React, { useState, useEffect, useCallback, use } from "react";
 import axios from "axios";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { createClient } from "@supabase/supabase-js";
+
+
+import { createClient } from "../utils/supabase/client";
 
 interface SeriesItem {
   id: string;
@@ -16,19 +18,18 @@ interface SeriesItem {
   channel_id: string;
 }
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
-);
+
 
 export default function SeriesPage() {
   const [date, setDate] = useState<Date>(new Date());
   const [series, setSeries] = useState<SeriesItem[]>([]);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | undefined>(undefined);
   const [userID, setUserID] = useState<string | null >(null);
 
   // Modal state
   const [selectedSeries, setSelectedSeries] = useState<SeriesItem | null>(null);
+
+  const supabase = createClient();
 
   const fetchSeries = useCallback(async (selectedDate: Date) => {
     const formattedDate = selectedDate.toISOString().split("T")[0];
@@ -52,16 +53,34 @@ export default function SeriesPage() {
         data: { user },
         error,
       } = await supabase.auth.getUser();
+  
       if (error) {
         console.error("Error fetching user:", error.message);
+        setUserEmail(undefined);
+        setUserID(null);
       } else {
-        setUserEmail(user?.email || null);
+        setUserEmail(user?.email || undefined);
         setUserID(user?.id || null);
-        console.log(user?.id);
+        console.log("User ID:", user?.id);
       }
     };
-
+  
     fetchUser();
+  
+    // Listen for auth state changes to keep session updated
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        setUserEmail(session.user.email);
+        setUserID(session.user.id);
+      } else {
+        setUserEmail(undefined);
+        setUserID(null);
+      }
+    });
+  
+    return () => {
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   const handleRecordShow = async () => {

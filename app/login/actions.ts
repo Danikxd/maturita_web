@@ -8,7 +8,7 @@ import { createClient } from '@/utils/supabase/server'
 export async function login(formData: FormData) {
   const supabase = await createClient()
 
-  
+  console.log('login', formData)
   const data = {
     email: formData.get('email') as string,
     password: formData.get('password') as string,
@@ -20,6 +20,7 @@ export async function login(formData: FormData) {
     redirect('/error')
   }
 
+  console.log('login success')
   revalidatePath('/', 'layout')
   redirect('/')
 }
