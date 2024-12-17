@@ -1,14 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
-
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
-);
-
+import { createClient } from "../../utils/supabase/client";
+import { useRouter } from "next/navigation";
 
 interface Notification {
   id: number;
@@ -18,56 +12,54 @@ interface Notification {
 }
 
 export default function NotificationsPage() {
-  const [userID, setUserID] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser();
-      if (error) {
-        console.error("Error fetching user:", error.message);
-      } else {
-        setUserID(user?.id || null);
-      }
-    };
-
-    fetchUser();
-  }, []);
-
+  const supabase = createClient();
+  const router = useRouter();
 
   useEffect(() => {
     const fetchNotifications = async () => {
-      if (userID) {
-        try {
-          const response = await fetch("http://localhost:3030/records", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ user_id: userID }),
-          });
+      try {
+        setLoading(true);
 
-          if (!response.ok) {
-            throw new Error("Failed to fetch notifications");
-          }
+        // Get the user's session
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
 
-          const data = await response.json();
-          setNotifications(data);
-        } catch (error) {
-          console.error("Error fetching notifications:", error);
-        } finally {
-          setLoading(false);
+        if (error || !session) {
+          console.error("User not authenticated or error fetching session:", error?.message);
+          router.push("/login");
+          return;
         }
+
+        const response = await fetch("http://localhost:3030/records", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          console.error("Failed to fetch notifications");
+          router.push("/login");
+          return;
+        }
+
+        const data = await response.json();
+        setNotifications(data);
+      } catch (error) {
+        console.error("Error fetching notifications:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchNotifications();
-  }, [userID]);
+  }, [supabase, router]);
 
   return (
     <div className="flex flex-col items-center py-10 bg-gray-50 min-h-screen">
@@ -85,7 +77,6 @@ export default function NotificationsPage() {
                 {notification.title}
               </h2>
               <p className="text-gray-600">Channel ID: {notification.channel_id}</p>
-             
             </li>
           ))}
         </ul>
