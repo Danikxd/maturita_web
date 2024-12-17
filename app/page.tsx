@@ -92,22 +92,24 @@ export default function SeriesPage() {
 
     if (selectedSeries) {
 
-        const {
-        data: { user },
+      const {
+        data: { session },
         error,
-      } = await supabase.auth.getUser();
+      } = await supabase.auth.getSession();
+
 
       try {
         const response = await axios.post(
           "http://localhost:3030/notifications",
           {
-            id: user?.id,
+        
             channel_id: Number(selectedSeries.channel_id),
             title: selectedSeries.title,
           },
           {
             headers: {
               "Content-Type": "application/json",
+              "Authorization": `Bearer ${session?.access_token}`,
             },
           }
         );
