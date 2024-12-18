@@ -190,7 +190,7 @@ export default function NotificationsPage() {
         Add Notification
       </button>
       {loading ? (
-        <p className="text-gray-600">Loading notifications...</p>
+        <p className="text-gray-600">Loading notifications....</p>
       ) : notifications.length > 0 ? (
         <ul className="w-full max-w-2xl bg-white shadow-md rounded-lg p-6 space-y-4">
           {notifications.map((notification) => (
