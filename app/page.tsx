@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, use } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -24,7 +24,7 @@ export default function SeriesPage() {
   const [date, setDate] = useState<Date>(new Date());
   const [series, setSeries] = useState<SeriesItem[]>([]);
   const [userEmail, setUserEmail] = useState<string | undefined>(undefined);
-  const [userID, setUserID] = useState<string | null >(null);
+ 
 
   // Modal state
   const [selectedSeries, setSelectedSeries] = useState<SeriesItem | null>(null);
@@ -57,10 +57,10 @@ export default function SeriesPage() {
       if (error) {
         console.error("Error fetching user:", error.message);
         setUserEmail(undefined);
-        setUserID(null);
+        
       } else {
         setUserEmail(user?.email || undefined);
-        setUserID(user?.id || null);
+        
         console.log("User ID:", user?.id);
       }
     };
@@ -71,10 +71,10 @@ export default function SeriesPage() {
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         setUserEmail(session.user.email);
-        setUserID(session.user.id);
+      
       } else {
         setUserEmail(undefined);
-        setUserID(null);
+       
       }
     });
   
@@ -94,7 +94,7 @@ export default function SeriesPage() {
 
       const {
         data: { session },
-        error,
+        
       } = await supabase.auth.getSession();
 
 

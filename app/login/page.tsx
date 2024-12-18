@@ -1,5 +1,4 @@
 import React from "react";
-import { createClient } from "@supabase/supabase-js";
 import { login, signUp } from "./actions";
 
 export default function LoginPage() {
