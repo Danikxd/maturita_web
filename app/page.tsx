@@ -240,7 +240,7 @@ export default function SeriesPage() {
               Record Show
             </button>
             <span className="ml-2 text-yellow-500">
-              <i className="fas fa-star"></i> {/* For Font Awesome */}
+              <i className="fas fa-star"></i> 
             </span>
           </div>
         </div>
