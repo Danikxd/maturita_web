@@ -15,6 +15,8 @@ interface Channel {
 export default function TvChannelsPage() {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [showModal, setShowModal] = useState<boolean>(false);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [editChannelId, setEditChannelId] = useState<number | null>(null);
   const [newChannelName, setNewChannelName] = useState<string>("");
   const [newDisplayName, setNewDisplayName] = useState<string>("");
   const [newLogo, setNewLogo] = useState<string>("");
@@ -75,11 +77,12 @@ export default function TvChannelsPage() {
     }
   };
 
-  const handleAddChannel = async () => {
+  const handleAddOrUpdateChannel = async () => {
     if (!newChannelName) {
       alert("Please provide a channel name.");
       return;
     }
+    console.log(editChannelId);
 
     try {
       const {
@@ -93,40 +96,72 @@ export default function TvChannelsPage() {
         return;
       }
 
-      const response = await axios.post(
-        "http://localhost:3030/tv_channels",
-        {
+      const url = isEditing
+        ? `http://localhost:3030/tv_channels/${editChannelId}`
+        : "http://localhost:3030/tv_channels";
+
+      const method = isEditing ? "PATCH" : "POST";
+
+      const response = await axios({
+        method,
+        url,
+        data: {
           channel_name: newChannelName,
           display_name: newDisplayName || null,
           logo: newLogo || null,
         },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        }
-      );
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
 
-      if (response.status === 201) {
-        alert("TV channel successfully added!");
-        setChannels((prev) => [...prev, response.data]);
+      if (response.status === 200 || response.status === 201) {
+        alert(
+          isEditing
+            ? "TV channel successfully updated!"
+            : "TV channel successfully added!"
+        );
 
-        // Reset modal inputs
+        setShowModal(false);
         setNewChannelName("");
         setNewDisplayName("");
         setNewLogo("");
-        setShowModal(false);
+        setIsEditing(false);
+        setEditChannelId(null);
 
         fetchChannels();
       } else {
-        console.error("Error adding TV channel:", response);
-        alert("Failed to add the TV channel. Please try again.");
+        console.error(
+          isEditing ? "Error updating TV channel:" : "Error adding TV channel:",
+          response
+        );
+        alert(
+          isEditing
+            ? "Failed to update the TV channel. Please try again."
+            : "Failed to add the TV channel. Please try again."
+        );
       }
     } catch (error) {
-      console.error("Error adding TV channel:", error);
-      alert("Failed to add the TV channel. Please try again.");
+      console.error(
+        isEditing ? "Error updating TV channel:" : "Error adding TV channel:",
+        error
+      );
+      alert(
+        isEditing
+          ? "Failed to update the TV channel. Please try again."
+          : "Failed to add the TV channel. Please try again."
+      );
     }
+  };
+
+  const handleEdit = (channel: Channel) => {
+    setIsEditing(true);
+    setEditChannelId(channel.id);
+    setNewChannelName(channel.channel_name);
+    setNewDisplayName(channel.display_name || "");
+    setNewLogo(channel.logo || "");
+    setShowModal(true);
   };
 
   return (
@@ -135,7 +170,14 @@ export default function TvChannelsPage() {
 
       <button
         className="px-4 py-2 mb-6 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-        onClick={() => setShowModal(true)}
+        onClick={() => {
+          setIsEditing(false);
+          setEditChannelId(null);
+          setNewChannelName("");
+          setNewDisplayName("");
+          setNewLogo("");
+          setShowModal(true);
+        }}
       >
         Add TV Channel
       </button>
@@ -174,7 +216,7 @@ export default function TvChannelsPage() {
                   {channel.logo ? (
                     <img
                       src={channel.logo}
-                      alt={`${channel.channel_name} Logo`}
+                      alt={`N/A`}
                       className="w-24 h-auto"
                     />
                   ) : (
@@ -182,6 +224,12 @@ export default function TvChannelsPage() {
                   )}
                 </td>
                 <td className="border border-gray-300 px-4 py-2">
+                  <button
+                    className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 focus:outline-none mr-2"
+                    onClick={() => handleEdit(channel)}
+                  >
+                    Edit
+                  </button>
                   <button
                     className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 focus:outline-none"
                     onClick={() => handleDelete(channel.id)}
@@ -198,7 +246,9 @@ export default function TvChannelsPage() {
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow-lg w-96">
-            <h2 className="text-lg font-semibold mb-4">Add TV Channel</h2>
+            <h2 className="text-lg font-semibold mb-4">
+              {isEditing ? "Edit TV Channel" : "Add TV Channel"}
+            </h2>
 
             <label className="block mb-2">Channel Name</label>
             <input
@@ -226,9 +276,9 @@ export default function TvChannelsPage() {
 
             <button
               className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 mr-2"
-              onClick={handleAddChannel}
+              onClick={handleAddOrUpdateChannel}
             >
-              Add
+              {isEditing ? "Update" : "Add"}
             </button>
             <button
               className="px-4 py-2 bg-gray-300 text-black rounded-md hover:bg-gray-400"
