@@ -2,9 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import "react-datepicker/dist/react-datepicker.css";
-
 import { createClient } from "../../../utils/supabase/client";
-
 import axios from "axios";
 
 interface Channel {
@@ -16,6 +14,10 @@ interface Channel {
 
 export default function TvChannelsPage() {
   const [channels, setChannels] = useState<Channel[]>([]);
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [newChannelName, setNewChannelName] = useState<string>("");
+  const [newDisplayName, setNewDisplayName] = useState<string>("");
+  const [newLogo, setNewLogo] = useState<string>("");
 
   const supabase = createClient();
 
@@ -32,7 +34,6 @@ export default function TvChannelsPage() {
       const data: Channel[] = await response.json();
       const sortedChannels = data.sort((a, b) => a.id - b.id);
       setChannels(sortedChannels);
-      console.log("Channels:", sortedChannels);
     } catch (error) {
       console.error("Error fetching channels:", error);
     }
@@ -65,18 +66,80 @@ export default function TvChannelsPage() {
         alert("TV channel successfully deleted!");
         setChannels((prev) => prev.filter((item) => item.id !== id));
       } else {
-        console.error("Error deleting notification:", response);
-        alert("Failed to delete the notification. Please try again.");
+        console.error("Error deleting TV channel:", response);
+        alert("Failed to delete the TV channel. Please try again.");
       }
     } catch (error) {
-      console.error("Error deleting notification:", error);
-      alert("Failed to delete the notification. Please try again.");
+      console.error("Error deleting TV channel:", error);
+      alert("Failed to delete the TV channel. Please try again.");
+    }
+  };
+
+  const handleAddChannel = async () => {
+    if (!newChannelName) {
+      alert("Please provide a channel name.");
+      return;
+    }
+
+    try {
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
+
+      if (error || !session) {
+        console.error("Error retrieving session:", error);
+        alert("Failed to authenticate. Please log in again.");
+        return;
+      }
+
+      const response = await axios.post(
+        "http://localhost:3030/tv_channels",
+        {
+          channel_name: newChannelName,
+          display_name: newDisplayName || null,
+          logo: newLogo || null,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      if (response.status === 201) {
+        alert("TV channel successfully added!");
+        setChannels((prev) => [...prev, response.data]);
+
+        // Reset modal inputs
+        setNewChannelName("");
+        setNewDisplayName("");
+        setNewLogo("");
+        setShowModal(false);
+
+        fetchChannels();
+      } else {
+        console.error("Error adding TV channel:", response);
+        alert("Failed to add the TV channel. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error adding TV channel:", error);
+      alert("Failed to add the TV channel. Please try again.");
     }
   };
 
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-6 text-center">TV Channels</h1>
+
+      <button
+        className="px-4 py-2 mb-6 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+        onClick={() => setShowModal(true)}
+      >
+        Add TV Channel
+      </button>
+
       <div className="overflow-x-auto">
         <table className="min-w-full table-auto border-collapse border border-gray-300">
           <thead>
@@ -131,6 +194,51 @@ export default function TvChannelsPage() {
           </tbody>
         </table>
       </div>
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded shadow-lg w-96">
+            <h2 className="text-lg font-semibold mb-4">Add TV Channel</h2>
+
+            <label className="block mb-2">Channel Name</label>
+            <input
+              type="text"
+              className="border rounded w-full p-2 mb-4"
+              value={newChannelName}
+              onChange={(e) => setNewChannelName(e.target.value)}
+            />
+
+            <label className="block mb-2">Display Name</label>
+            <input
+              type="text"
+              className="border rounded w-full p-2 mb-4"
+              value={newDisplayName}
+              onChange={(e) => setNewDisplayName(e.target.value)}
+            />
+
+            <label className="block mb-2">Logo URL</label>
+            <input
+              type="text"
+              className="border rounded w-full p-2 mb-4"
+              value={newLogo}
+              onChange={(e) => setNewLogo(e.target.value)}
+            />
+
+            <button
+              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 mr-2"
+              onClick={handleAddChannel}
+            >
+              Add
+            </button>
+            <button
+              className="px-4 py-2 bg-gray-300 text-black rounded-md hover:bg-gray-400"
+              onClick={() => setShowModal(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
