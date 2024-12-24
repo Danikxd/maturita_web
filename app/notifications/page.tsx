@@ -1,10 +1,9 @@
-"use client"; 
+"use client";
 
 import { useEffect, useState } from "react";
 import { createClient } from "../../utils/supabase/client";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-
 
 interface Notification {
   id: number;
@@ -12,7 +11,6 @@ interface Notification {
   title: string;
   user_id: string;
 }
-
 
 interface Channel {
   id: number;
@@ -27,6 +25,10 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState<boolean>(true);
 
   const [showModal, setShowModal] = useState<boolean>(false);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [editNotificationId, setEditNotificationId] = useState<number | null>(
+    null
+  );
   const [newNotificationTitle, setNewNotificationTitle] = useState<string>("");
   const [selectedChannel, setSelectedChannel] = useState<number | null>(null);
 
@@ -38,7 +40,6 @@ export default function NotificationsPage() {
     fetchNotifications();
   }, []);
 
- 
   const fetchChannels = async () => {
     try {
       const response = await fetch("http://localhost:3030/channels");
@@ -47,12 +48,10 @@ export default function NotificationsPage() {
       }
       const data: Channel[] = await response.json();
       setChannels(data);
-      console.log("Channels:", data);
     } catch (error) {
       console.error("Error fetching channels:", error);
     }
   };
-
 
   const fetchNotifications = async () => {
     try {
@@ -68,7 +67,7 @@ export default function NotificationsPage() {
         return;
       }
 
-      const response = await fetch("http://localhost:3030/records", {
+      const response = await fetch("http://localhost:3030/notifications", {
         method: "GET",
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -83,6 +82,9 @@ export default function NotificationsPage() {
       }
 
       const data: Notification[] = await response.json();
+
+      data.sort((a, b) => a.id - b.id);
+
       setNotifications(data);
     } catch (error) {
       console.error("Error fetching notifications:", error);
@@ -90,13 +92,6 @@ export default function NotificationsPage() {
       setLoading(false);
     }
   };
-
-
-  const getChannelName = (channelId: number): string => {
-    const channel = channels.find((ch) => ch.id === channelId);
-    return channel ? channel.channel_name : "Unknown channel";
-  };
-
 
   const handleDeleteNotification = async (id: number) => {
     try {
@@ -132,7 +127,7 @@ export default function NotificationsPage() {
     }
   };
 
-  const handleAddNotification = async () => {
+  const handleAddOrUpdateNotification = async () => {
     if (!newNotificationTitle || !selectedChannel) {
       alert("Please fill in all fields.");
       return;
@@ -151,56 +146,89 @@ export default function NotificationsPage() {
         return;
       }
 
-      const response = await axios.post(
-        "http://localhost:3030/notifications",
-        {
+      const url = isEditing
+        ? `http://localhost:3030/notifications/${editNotificationId}`
+        : "http://localhost:3030/notifications";
+
+      const method = isEditing ? "PATCH" : "POST";
+
+      const response = await axios({
+        method,
+        url,
+        data: {
           channel_id: Number(selectedChannel),
           title: newNotificationTitle,
+
         },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        }
-      );
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
 
-    
-      if (response.status === 201) {
-        alert("Notification successfully added!");
-    
-        setNotifications((prev) => [...prev, response.data]);
+      if (response.status === 201 || response.status === 200) {
+        alert(
+          isEditing
+            ? "Notification successfully updated!"
+            : "Notification successfully added!"
+        );
 
-       
         setShowModal(false);
         setNewNotificationTitle("");
         setSelectedChannel(null);
+        setIsEditing(false);
+        setEditNotificationId(null);
 
-    
         fetchNotifications();
       } else {
-        console.error("Error adding notification:", response);
-        alert("Failed to add the notification. Please try again.");
+        console.error(
+          isEditing ? "Error updating notification:" : "Error adding notification:",
+          response
+        );
+        alert(
+          isEditing
+            ? "Failed to update the notification. Please try again."
+            : "Failed to add the notification. Please try again."
+        );
       }
     } catch (error) {
-      console.error("Error adding notification:", error);
-      alert("Failed to add the notification. Please try again.");
+      console.error(
+        isEditing ? "Error updating notification:" : "Error adding notification:",
+        error
+      );
+      alert(
+        isEditing
+          ? "Failed to update the notification. Please try again."
+          : "Failed to add the notification. Please try again."
+      );
     }
+  };
+
+  const handleEditNotification = (notification: Notification) => {
+    setIsEditing(true);
+    setEditNotificationId(notification.id);
+    setNewNotificationTitle(notification.title);
+    setSelectedChannel(notification.channel_id);
+    setShowModal(true);
   };
 
   return (
     <div className="flex flex-col items-center py-10 bg-gray-50 min-h-screen">
       <h1 className="text-2xl font-bold text-gray-800 mb-6">Your Notifications</h1>
 
-      
       <button
         className="px-4 py-2 mb-6 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-        onClick={() => setShowModal(true)}
+        onClick={() => {
+          setIsEditing(false);
+          setEditNotificationId(null);
+          setNewNotificationTitle("");
+          setSelectedChannel(null);
+          setShowModal(true);
+        }}
       >
         Add Notification
       </button>
 
-  
       {loading ? (
         <p className="text-gray-600">Loading notifications...</p>
       ) : notifications.length > 0 ? (
@@ -214,10 +242,16 @@ export default function NotificationsPage() {
                 {notification.title}
               </h2>
               <p className="text-gray-600">
-                Channel name: {getChannelName(notification.channel_id)}
+                Channel: {channels.find((ch) => ch.id === notification.channel_id)?.channel_name || "Unknown"}
               </p>
               <button
-                className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 focus:outline-none mt-2"
+                className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 focus:outline-none mr-2"
+                onClick={() => handleEditNotification(notification)}
+              >
+                Edit
+              </button>
+              <button
+                className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 focus:outline-none"
                 onClick={() => handleDeleteNotification(notification.id)}
               >
                 Delete
@@ -229,11 +263,12 @@ export default function NotificationsPage() {
         <p className="text-gray-600">No notifications found.</p>
       )}
 
-    
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow-lg w-96">
-            <h2 className="text-lg font-semibold mb-4">Add Notification</h2>
+            <h2 className="text-lg font-semibold mb-4">
+              {isEditing ? "Edit Notification" : "Add Notification"}
+            </h2>
             <label className="block mb-2">Notification Title</label>
             <input
               type="text"
@@ -260,9 +295,9 @@ export default function NotificationsPage() {
 
             <button
               className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 mr-2"
-              onClick={handleAddNotification}
+              onClick={handleAddOrUpdateNotification}
             >
-              Add
+              {isEditing ? "Update" : "Add"}
             </button>
             <button
               className="px-4 py-2 bg-gray-300 text-black rounded-md hover:bg-gray-400"
