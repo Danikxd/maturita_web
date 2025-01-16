@@ -38,6 +38,7 @@ export default function SeriesPage() {
         `http://localhost:3030/series/${formattedDate}`
       );
       setSeries(response.data);
+      console.log("Fetched data:", response.data);
     } catch (error) {
       console.error("Error fetching data:", error);
     }
@@ -45,6 +46,7 @@ export default function SeriesPage() {
 
   useEffect(() => {
     fetchSeries(date);
+
   }, [date, fetchSeries]);
 
   useEffect(() => {
@@ -55,7 +57,7 @@ export default function SeriesPage() {
       } = await supabase.auth.getUser();
   
       if (error) {
-        console.error("Error fetching user:", error.message);
+      //  console.error("Error fetching user:", error.message);
         setUserEmail(undefined);
         
       } else {

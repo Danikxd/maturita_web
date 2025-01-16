@@ -26,9 +26,7 @@ export default function NotificationsPage() {
 
   const [showModal, setShowModal] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [editNotificationId, setEditNotificationId] = useState<number | null>(
-    null
-  );
+  const [editNotificationId, setEditNotificationId] = useState<number | null>(null);
   const [newNotificationTitle, setNewNotificationTitle] = useState<string>("");
   const [selectedChannel, setSelectedChannel] = useState<number | null>(null);
 
@@ -82,9 +80,7 @@ export default function NotificationsPage() {
       }
 
       const data: Notification[] = await response.json();
-
       data.sort((a, b) => a.id - b.id);
-
       setNotifications(data);
     } catch (error) {
       console.error("Error fetching notifications:", error);
@@ -158,7 +154,6 @@ export default function NotificationsPage() {
         data: {
           channel_id: Number(selectedChannel),
           title: newNotificationTitle,
-
         },
         headers: {
           "Content-Type": "application/json",
@@ -242,7 +237,11 @@ export default function NotificationsPage() {
                 {notification.title}
               </h2>
               <p className="text-gray-600">
-                Channel: {channels.find((ch) => ch.id === notification.channel_id)?.channel_name || "Unknown"}
+                Channel:{" "}
+                {
+                  channels.find((ch) => ch.id === notification.channel_id)
+                    ?.channel_name || "Unknown"
+                }
               </p>
               <button
                 className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 focus:outline-none mr-2"
@@ -278,6 +277,7 @@ export default function NotificationsPage() {
             />
 
             <label className="block mb-2">Select Channel</label>
+            {/* Seřazení kanálů tak, aby byl kanál s ID 186 vždy první */}
             <select
               className="border rounded w-full p-2 mb-4"
               value={selectedChannel || ""}
@@ -286,11 +286,17 @@ export default function NotificationsPage() {
               <option value="" disabled>
                 -- Select a Channel --
               </option>
-              {channels.map((channel) => (
-                <option key={channel.id} value={channel.id}>
-                  {channel.channel_name}
-                </option>
-              ))}
+              {[...channels]
+                .sort((a, b) => {
+                  if (a.id === 186) return -1;
+                  if (b.id === 186) return 1;
+                  return 0;
+                })
+                .map((channel) => (
+                  <option key={channel.id} value={channel.id}>
+                    {channel.channel_name}
+                  </option>
+                ))}
             </select>
 
             <button
