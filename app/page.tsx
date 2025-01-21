@@ -4,13 +4,10 @@ import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-
-
 import { createClient } from "../utils/supabase/client";
 
 interface SeriesItem {
   id: string;
-  channel_name: string;
   title: string;
   desc: string;
   start: string;
@@ -18,18 +15,37 @@ interface SeriesItem {
   channel_id: string;
 }
 
-
+interface ChannelItem {
+  id: number;
+  channel_name: string;
+  display_name: string;
+  logo: string;
+}
 
 export default function SeriesPage() {
   const [date, setDate] = useState<Date>(new Date());
   const [series, setSeries] = useState<SeriesItem[]>([]);
+  const [channels, setChannels] = useState<Record<string, ChannelItem>>({});
   const [userEmail, setUserEmail] = useState<string | undefined>(undefined);
- 
-
-  // Modal state
   const [selectedSeries, setSelectedSeries] = useState<SeriesItem | null>(null);
 
   const supabase = createClient();
+
+  const fetchChannels = useCallback(async () => {
+    try {
+      const response = await axios.get<ChannelItem[]>(
+        `http://localhost:3030/channels`
+      );
+      const channelMap = response.data.reduce((acc, channel) => {
+        acc[channel.id.toString()] = channel; // Use string keys for consistency
+        return acc;
+      }, {} as Record<string, ChannelItem>);
+      console.log("Fetched channels data:", channelMap);
+      setChannels(channelMap);
+    } catch (error) {
+      console.error("Error fetching channels:", error);
+    }
+  }, []);
 
   const fetchSeries = useCallback(async (selectedDate: Date) => {
     const formattedDate = selectedDate.toISOString().split("T")[0];
@@ -38,16 +54,16 @@ export default function SeriesPage() {
         `http://localhost:3030/series/${formattedDate}`
       );
       setSeries(response.data);
-      console.log("Fetched data:", response.data);
+      console.log("Fetched series data:", response.data);
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error("Error fetching series:", error);
     }
   }, []);
 
   useEffect(() => {
+    fetchChannels();
     fetchSeries(date);
-
-  }, [date, fetchSeries]);
+  }, [date, fetchChannels, fetchSeries]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -55,31 +71,22 @@ export default function SeriesPage() {
         data: { user },
         error,
       } = await supabase.auth.getUser();
-  
       if (error) {
-      //  console.error("Error fetching user:", error.message);
         setUserEmail(undefined);
-        
       } else {
         setUserEmail(user?.email || undefined);
-        
-        console.log("User ID:", user?.id);
       }
     };
-  
+
     fetchUser();
-  
-    // Listen for auth state changes to keep session updated
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         setUserEmail(session.user.email);
-      
       } else {
         setUserEmail(undefined);
-       
       }
     });
-  
+
     return () => {
       listener.subscription.unsubscribe();
     };
@@ -91,27 +98,22 @@ export default function SeriesPage() {
       return;
     }
 
-
     if (selectedSeries) {
-
       const {
         data: { session },
-        
       } = await supabase.auth.getSession();
-
 
       try {
         const response = await axios.post(
           "http://localhost:3030/notifications",
           {
-        
             channel_id: Number(selectedSeries.channel_id),
             title: selectedSeries.title,
           },
           {
             headers: {
               "Content-Type": "application/json",
-              "Authorization": `Bearer ${session?.access_token}`,
+              Authorization: `Bearer ${session?.access_token}`,
             },
           }
         );
@@ -123,35 +125,34 @@ export default function SeriesPage() {
       } catch (error) {
         console.error("Error recording show:", error);
         alert("Failed to record the show. Please try again.");
-      } 
+      }
     }
   };
 
-  const groupedSeries = series.reduce<Record<string, SeriesItem[]>>(
-    (acc, item) => {
-      const channel = item.channel_name || "Unknown Channel";
-      if (!acc[channel]) acc[channel] = [];
-      acc[channel].push(item);
-      return acc;
-    },
-    {}
-  );
+  // Debugging grouped series
+  const groupedSeries = series.reduce<Record<string, SeriesItem[]>>((acc, item) => {
+    const channelKey = item.channel_id.toString(); // Ensure the key is a string
+    if (!acc[channelKey]) acc[channelKey] = [];
+    acc[channelKey].push(item);
+    return acc;
+  }, {});
+
+  console.log("Grouped Series:", groupedSeries);
+  console.log("Channels Object:", channels);
 
   const sortedChannels = Object.keys(groupedSeries).sort();
-  sortedChannels.forEach((channel) => {
-    groupedSeries[channel].sort(
-      (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()
-    );
-  });
+  console.log("Sorted Channels:", sortedChannels);
 
   return (
     <div className="relative p-4 max-w-7xl mx-auto">
       <div className="fixed top-2 right-4 text-sm">
         {userEmail ? (
-         <>
-           <a href="/notifications" className="text-blue-500 hover:underline">My Recordings</a>
-           <span>Logged in as: {userEmail}</span>
-         </>
+          <>
+            <a href="/notifications" className="text-blue-500 hover:underline">
+              My Recordings
+            </a>
+            <span>Logged in as: {userEmail}</span>
+          </>
         ) : (
           <a href="/login" className="text-blue-500 underline">
             Login
@@ -170,14 +171,25 @@ export default function SeriesPage() {
         </div>
 
         <div className="flex gap-4 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
-          {sortedChannels.map((channel) => (
+          {sortedChannels.map((channelId) => (
             <div
-              key={channel}
+              key={channelId}
               className="flex-shrink-0 bg-gray-100 border rounded p-4 w-64"
             >
-              <h2 className="text-lg font-semibold text-blue-600 mb-2">{channel}</h2>
+              <div className="flex items-center mb-4">
+                {channels[channelId]?.logo ? (
+                  <img
+                    src={channels[channelId].logo}
+                    alt={channels[channelId].channel_name}
+                    className="w-auto h-12 mx-auto object-contain"
+                    onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
+                  />
+                ) : (
+                  <span className="text-lg font-semibold">{channels[channelId]?.display_name || channelId}</span>
+                )}
+              </div>
               <ul>
-                {groupedSeries[channel].map((item) => (
+                {groupedSeries[channelId]?.map((item) => (
                   <li key={item.id} className="mb-4">
                     <h5
                       className="font-bold cursor-pointer text-blue-500"
@@ -205,12 +217,8 @@ export default function SeriesPage() {
         </div>
       </div>
 
-      {/* Modal */}
       {selectedSeries && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-          onClick={() => setSelectedSeries(null)}
-        >
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div
             className="bg-white p-6 rounded shadow-lg w-96"
             onClick={(e) => e.stopPropagation()}
@@ -223,7 +231,7 @@ export default function SeriesPage() {
             </button>
             <h2 className="text-xl font-bold mb-4">{selectedSeries.title}</h2>
             <p className="mb-2">
-              <strong>Channel:</strong> {selectedSeries.channel_name}
+              <strong>Channel:</strong> {channels[selectedSeries.channel_id]?.channel_name}
             </p>
             <p className="mb-2">
               <strong>Description:</strong> {selectedSeries.desc}
@@ -234,16 +242,12 @@ export default function SeriesPage() {
             <p className="mb-2">
               <strong>End:</strong> {new Date(selectedSeries.end).toLocaleString()}
             </p>
-
             <button
               className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none"
               onClick={handleRecordShow}
             >
               Record Show
             </button>
-            <span className="ml-2 text-yellow-500">
-              <i className="fas fa-star"></i> 
-            </span>
           </div>
         </div>
       )}

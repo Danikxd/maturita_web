@@ -18,11 +18,11 @@ export default function TvChannelsPage() {
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editChannelId, setEditChannelId] = useState<number | null>(null);
 
-  // Form states
+  // Form states for the “Add/Edit Channel” modal
   const [newChannelName, setNewChannelName] = useState<string>("");
   const [newDisplayName, setNewDisplayName] = useState<string>("");
-  // Instead of a string for logo, we'll store the File object here.
   const [newLogoFile, setNewLogoFile] = useState<File | null>(null);
+  const [existingLogoUrl, setExistingLogoUrl] = useState<string | null>(null);
 
   const supabase = createClient();
 
@@ -59,12 +59,15 @@ export default function TvChannelsPage() {
         return;
       }
 
-      const response = await axios.delete(`http://localhost:3030/tv_channels/${id}`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
+      const response = await axios.delete(
+        `http://localhost:3030/tv_channels/${id}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
 
       if (response.status === 200) {
         alert("TV channel successfully deleted!");
@@ -79,7 +82,28 @@ export default function TvChannelsPage() {
     }
   };
 
-  // Add or update a channel
+  // Open the modal for adding or editing a channel
+  const openModal = (channel?: Channel) => {
+    if (channel) {
+      // Editing mode
+      setIsEditing(true);
+      setEditChannelId(channel.id);
+      setNewChannelName(channel.channel_name);
+      setNewDisplayName(channel.display_name || "");
+      setExistingLogoUrl(channel.logo);
+    } else {
+      // Adding mode
+      setIsEditing(false);
+      setEditChannelId(null);
+      setNewChannelName("");
+      setNewDisplayName("");
+      setExistingLogoUrl(null);
+    }
+    setNewLogoFile(null);
+    setShowModal(true);
+  };
+
+  // Add or update a channel (with optional logo upload)
   const handleAddOrUpdateChannel = async () => {
     if (!newChannelName) {
       alert("Please provide a channel name.");
@@ -87,7 +111,6 @@ export default function TvChannelsPage() {
     }
 
     try {
-      // Get user session for the authorization token
       const {
         data: { session },
         error,
@@ -99,10 +122,9 @@ export default function TvChannelsPage() {
         return;
       }
 
-     
-      let logoPath = null;
+      // 1) If user selected a new file, upload it to Supabase Storage
+      let logoPath = existingLogoUrl; // keep existing logo if none selected
       if (newLogoFile) {
-      
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from("tv_logos")
           .upload(`${newLogoFile.name}`, newLogoFile, {
@@ -110,40 +132,33 @@ export default function TvChannelsPage() {
             upsert: false,
           });
 
-          if (uploadData) {
-           
-            const { data: publicData } = supabase
-              .storage
-              .from("tv_logos")
-              .getPublicUrl(uploadData.path);
-          
-           
-           logoPath = publicData.publicUrl;
-          }
-
         if (uploadError) {
           console.error("Error uploading logo:", uploadError);
           alert("Failed to upload logo. Please try again.");
           return;
         }
-        console.log(uploadData);
-       
+
+        if (uploadData) {
+          const { data: publicData } = supabase.storage
+            .from("tv_logos")
+            .getPublicUrl(uploadData.path);
+          logoPath = publicData.publicUrl;
+        }
       }
 
-      // 2. Choose the correct URL and method based on isEditing
+      // 2) Make the POST (add) or PATCH (update) request
       const url = isEditing
         ? `http://localhost:3030/tv_channels/${editChannelId}`
         : "http://localhost:3030/tv_channels";
       const method = isEditing ? "PATCH" : "POST";
 
-      // 3. Send data to your backend
       const response = await axios({
         method,
         url,
         data: {
           channel_name: newChannelName,
           display_name: newDisplayName || null,
-          logo: logoPath, 
+          logo: logoPath,
         },
         headers: {
           "Content-Type": "application/json",
@@ -165,6 +180,7 @@ export default function TvChannelsPage() {
         setNewLogoFile(null);
         setIsEditing(false);
         setEditChannelId(null);
+        setExistingLogoUrl(null);
 
         // Refresh channels
         fetchChannels();
@@ -192,34 +208,19 @@ export default function TvChannelsPage() {
     }
   };
 
-  // Populate the form fields for editing
-  const handleEdit = (channel: Channel) => {
-    setIsEditing(true);
-    setEditChannelId(channel.id);
-    setNewChannelName(channel.channel_name);
-    setNewDisplayName(channel.display_name || "");
-    setNewLogoFile(null); // We'll upload a new file if user wants to change
-    setShowModal(true);
-  };
-
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-6 text-center">TV Channels</h1>
 
-      {/* Add Channel Button */}
-      <button
-        className="px-4 py-2 mb-6 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-        onClick={() => {
-          setIsEditing(false);
-          setEditChannelId(null);
-          setNewChannelName("");
-          setNewDisplayName("");
-          setNewLogoFile(null);
-          setShowModal(true);
-        }}
-      >
-        Add TV Channel
-      </button>
+      <div className="flex space-x-4 mb-6">
+        {/* Add Channel Button */}
+        <button
+          className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+          onClick={() => openModal()}
+        >
+          Add TV Channel
+        </button>
+      </div>
 
       {/* Channels Table */}
       <div className="overflow-x-auto">
@@ -247,7 +248,9 @@ export default function TvChannelsPage() {
                 key={channel.id}
                 className="hover:bg-gray-100 transition duration-150"
               >
-                <td className="border border-gray-300 px-4 py-2">{channel.id}</td>
+                <td className="border border-gray-300 px-4 py-2">
+                  {channel.id}
+                </td>
                 <td className="border border-gray-300 px-4 py-2">
                   {channel.channel_name}
                 </td>
@@ -268,7 +271,7 @@ export default function TvChannelsPage() {
                 <td className="border border-gray-300 px-4 py-2">
                   <button
                     className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 focus:outline-none mr-2"
-                    onClick={() => handleEdit(channel)}
+                    onClick={() => openModal(channel)}
                   >
                     Edit
                   </button>
@@ -285,7 +288,7 @@ export default function TvChannelsPage() {
         </table>
       </div>
 
-      {/* Modal for Add/Edit TV Channel */}
+      {/* Modal for Add/Edit TV Channel (with optional logo) */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow-lg w-96">
@@ -309,7 +312,18 @@ export default function TvChannelsPage() {
               onChange={(e) => setNewDisplayName(e.target.value)}
             />
 
-            <label className="block mb-2">Logo</label>
+            {/* Optional Logo Upload */}
+            <label className="block mb-2">Logo (optional)</label>
+            {existingLogoUrl && !newLogoFile && (
+              <div className="mb-4">
+                <img
+                  src={existingLogoUrl}
+                  alt="Current logo"
+                  className="h-12 mb-2"
+                />
+                <p className="text-xs text-gray-500">Current Logo Preview</p>
+              </div>
+            )}
             <input
               type="file"
               accept="image/*"
