@@ -1,17 +1,17 @@
 "use client";
 
-import React, {useState, useEffect} from "react";
+import React, { useEffect} from "react";
 import { login, signUp } from "./actions";
 
 export default function LoginPage() {
 
-  const [signupSuccess, setSignupSuccess] = useState(false);
+  
   
   useEffect(() => {
     if (typeof window !== "undefined") {
       const searchParams = new URLSearchParams(window.location.search);
       if (searchParams.get("signupSuccess") === "true") {
-        setSignupSuccess(true);
+       
         alert("Registration successful! Please check your email to confirm your account before logging in.");
       }
     }
