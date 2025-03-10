@@ -1,12 +1,30 @@
-import React from "react";
+"use client";
+
+import React, {useState, useEffect} from "react";
 import { login, signUp } from "./actions";
 
 export default function LoginPage() {
+
+  const [signupSuccess, setSignupSuccess] = useState(false);
+  
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const searchParams = new URLSearchParams(window.location.search);
+      if (searchParams.get("signupSuccess") === "true") {
+        setSignupSuccess(true);
+        alert("Registration successful! Please check your email to confirm your account before logging in.");
+      }
+    }
+  }, []);
+
+
   return (
     <div className="flex justify-center items-center h-screen bg-gray-100">
       <form className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 w-96">
         <h2 className="text-2xl font-bold text-center mb-6">Welcome</h2>
 
+
+       
         <div className="mb-4">
           <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">
             Email:

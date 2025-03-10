@@ -10,6 +10,7 @@ interface Notification {
   channel_id: number;
   title: string;
   user_id: string;
+  notify_before: number; // New field
 }
 
 interface Channel {
@@ -29,6 +30,7 @@ export default function NotificationsPage() {
   const [editNotificationId, setEditNotificationId] = useState<number | null>(null);
   const [newNotificationTitle, setNewNotificationTitle] = useState<string>("");
   const [selectedChannel, setSelectedChannel] = useState<number | null>(null);
+  const [notifyBefore, setNotifyBefore] = useState<number>(3); // Default value
 
   const supabase = createClient();
   const router = useRouter();
@@ -80,6 +82,7 @@ export default function NotificationsPage() {
       }
 
       const data: Notification[] = await response.json();
+      console.log("Notifications:", data);
       data.sort((a, b) => a.id - b.id);
       setNotifications(data);
     } catch (error) {
@@ -124,8 +127,8 @@ export default function NotificationsPage() {
   };
 
   const handleAddOrUpdateNotification = async () => {
-    if (!newNotificationTitle || !selectedChannel) {
-      alert("Please fill in all fields.");
+    if (!newNotificationTitle || !selectedChannel || notifyBefore < 1 || notifyBefore > 14) {
+      alert("Please fill in all fields and ensure notify_before is between 1 and 14.");
       return;
     }
 
@@ -154,6 +157,7 @@ export default function NotificationsPage() {
         data: {
           channel_id: Number(selectedChannel),
           title: newNotificationTitle,
+          notifyBefore, // Include notify_before field
         },
         headers: {
           "Content-Type": "application/json",
@@ -171,6 +175,7 @@ export default function NotificationsPage() {
         setShowModal(false);
         setNewNotificationTitle("");
         setSelectedChannel(null);
+        setNotifyBefore(3); // Reset notify_before to default
         setIsEditing(false);
         setEditNotificationId(null);
 
@@ -204,6 +209,7 @@ export default function NotificationsPage() {
     setEditNotificationId(notification.id);
     setNewNotificationTitle(notification.title);
     setSelectedChannel(notification.channel_id);
+    setNotifyBefore(notification.notify_before); // Populate notify_before field
     setShowModal(true);
   };
 
@@ -218,6 +224,7 @@ export default function NotificationsPage() {
           setEditNotificationId(null);
           setNewNotificationTitle("");
           setSelectedChannel(null);
+          setNotifyBefore(3); // Reset notify_before to default
           setShowModal(true);
         }}
       >
@@ -240,8 +247,11 @@ export default function NotificationsPage() {
                 Channel:{" "}
                 {
                   channels.find((ch) => ch.id === notification.channel_id)
-                    ?.channel_name || "Unknown"
+                    ?.display_name || "Unknown"
                 }
+              </p>
+              <p className="text-gray-600">
+                Notify Before: {notification.notify_before} days
               </p>
               <button
                 className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 focus:outline-none mr-2"
@@ -277,7 +287,6 @@ export default function NotificationsPage() {
             />
 
             <label className="block mb-2">Select Channel</label>
-            {/* Seřazení kanálů tak, aby byl kanál s ID 186 vždy první */}
             <select
               className="border rounded w-full p-2 mb-4"
               value={selectedChannel || ""}
@@ -298,6 +307,16 @@ export default function NotificationsPage() {
                   </option>
                 ))}
             </select>
+
+            <label className="block mb-2">Notify Before (days)</label>
+            <input
+              type="number"
+              className="border rounded w-full p-2 mb-4"
+              value={notifyBefore}
+              min={1}
+              max={14}
+              onChange={(e) => setNotifyBefore(Number(e.target.value))}
+            />
 
             <button
               className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 mr-2"
