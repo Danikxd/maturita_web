@@ -28,13 +28,14 @@ export default function SeriesPage() {
   const [channels, setChannels] = useState<Record<string, ChannelItem>>({});
   const [userEmail, setUserEmail] = useState<string | undefined>(undefined);
   const [selectedSeries, setSelectedSeries] = useState<SeriesItem | null>(null);
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3030";
 
   const supabase = createClient();
 
   const fetchChannels = useCallback(async () => {
     try {
       const response = await axios.get<ChannelItem[]>(
-        `http://localhost:3030/channels`
+        `${API_BASE_URL}/channels`
       );
       const channelMap = response.data.reduce((acc, channel) => {
         acc[channel.id.toString()] = channel; // Use string keys for consistency
@@ -51,7 +52,7 @@ export default function SeriesPage() {
     const formattedDate = selectedDate.toISOString().split("T")[0];
     try {
       const response = await axios.get<SeriesItem[]>(
-        `http://localhost:3030/series/${formattedDate}`
+        `${API_BASE_URL}/series/${formattedDate}`
       );
       setSeries(response.data);
       console.log("Fetched series data:", response.data);
@@ -105,7 +106,7 @@ export default function SeriesPage() {
 
       try {
         const response = await axios.post(
-          "http://localhost:3030/notifications",
+          `${API_BASE_URL}/notifications`,
           {
             channel_id: Number(selectedSeries.channel_id),
             title: selectedSeries.title,

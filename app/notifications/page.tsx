@@ -32,6 +32,8 @@ export default function NotificationsPage() {
   const [selectedChannel, setSelectedChannel] = useState<number | null>(null);
   const [notifyBefore, setNotifyBefore] = useState<number>(3); // Default value
 
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3030";
+
   const supabase = createClient();
   const router = useRouter();
 
@@ -42,7 +44,7 @@ export default function NotificationsPage() {
 
   const fetchChannels = async () => {
     try {
-      const response = await fetch("http://localhost:3030/channels");
+      const response = await fetch(`${API_BASE_URL}/channels`);
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
@@ -67,7 +69,7 @@ export default function NotificationsPage() {
         return;
       }
 
-      const response = await fetch("http://localhost:3030/notifications", {
+      const response = await fetch(`${API_BASE_URL}/notifications`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -106,7 +108,7 @@ export default function NotificationsPage() {
         return;
       }
 
-      const response = await axios.delete(`http://localhost:3030/notifications/${id}`, {
+      const response = await axios.delete(`${API_BASE_URL}/notifications/${id}`, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
@@ -146,8 +148,8 @@ export default function NotificationsPage() {
       }
 
       const url = isEditing
-        ? `http://localhost:3030/notifications/${editNotificationId}`
-        : "http://localhost:3030/notifications";
+        ? `${API_BASE_URL}notifications/${editNotificationId}`
+        : `${API_BASE_URL}/notifications`;
 
       const method = isEditing ? "PATCH" : "POST";
 
