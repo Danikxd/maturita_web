@@ -148,7 +148,7 @@ export default function NotificationsPage() {
       }
 
       const url = isEditing
-        ? `${API_BASE_URL}notifications/${editNotificationId}`
+        ? `${API_BASE_URL}/notifications/${editNotificationId}`
         : `${API_BASE_URL}/notifications`;
 
       const method = isEditing ? "PATCH" : "POST";
@@ -159,7 +159,7 @@ export default function NotificationsPage() {
         data: {
           channel_id: Number(selectedChannel),
           title: newNotificationTitle,
-          notifyBefore, // Include notify_before field
+          notify_before: notifyBefore, // Include notify_before field
         },
         headers: {
           "Content-Type": "application/json",
