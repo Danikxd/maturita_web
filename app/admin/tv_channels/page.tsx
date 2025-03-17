@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import "react-datepicker/dist/react-datepicker.css";
 import { createClient } from "../../../utils/supabase/client";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 
 interface Channel {
   id: number;
@@ -17,6 +18,7 @@ export default function TvChannelsPage() {
   const [showModal, setShowModal] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editChannelId, setEditChannelId] = useState<number | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
   // Form states for the “Add/Edit Channel” modal
   const [newChannelName, setNewChannelName] = useState<string>("");
@@ -25,10 +27,53 @@ export default function TvChannelsPage() {
   const [existingLogoUrl, setExistingLogoUrl] = useState<string | null>(null);
 
   const supabase = createClient();
+  const router = useRouter();
 
   useEffect(() => {
-    fetchChannels();
+    checkAdminStatus();
   }, []);
+
+
+  const checkAdminStatus = async () => {
+    try {
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
+
+      if (error || !session) {
+        console.error("Error retrieving session:", error);
+        router.push("/");
+        return;
+      }
+
+      const userId = session.user.id;
+
+      console.log("Checking admin status for user ID:", userId);
+
+     
+      const response = await axios.post("http://localhost:3030/verify", {
+        user_id: userId,
+    }, {
+        headers: {
+            Authorization: `Bearer ${session.access_token}`,
+        },
+    });
+
+      if (response.data.is_admin) {
+        setIsAdmin(true);
+        fetchChannels(); 
+      } else {
+        setIsAdmin(false);
+        router.push("/"); 
+      }
+    } catch (error) {
+      console.error("Error checking admin status:", error);
+      router.push("/");
+    }
+  };
+
+
 
   // Fetch all channels from your backend
   const fetchChannels = async () => {
