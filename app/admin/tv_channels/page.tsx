@@ -18,8 +18,7 @@ export default function TvChannelsPage() {
   const [showModal, setShowModal] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editChannelId, setEditChannelId] = useState<number | null>(null);
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-
+  
   // Form states for the “Add/Edit Channel” modal
   const [newChannelName, setNewChannelName] = useState<string>("");
   const [newDisplayName, setNewDisplayName] = useState<string>("");
@@ -61,10 +60,10 @@ export default function TvChannelsPage() {
     });
 
       if (response.data.is_admin) {
-        setIsAdmin(true);
+     
         fetchChannels(); 
       } else {
-        setIsAdmin(false);
+        
         router.push("/"); 
       }
     } catch (error) {
