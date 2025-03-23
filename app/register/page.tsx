@@ -2,16 +2,24 @@
 
 import React, { useEffect, useState } from 'react';
 import { signUp } from '../../actions';
+import Link from 'next/link';
+
+const errorMessages: Record<string, string> = {
+  email_exists: "Tento e-mail je již zaregistrován.",
+  invalid_email: "Zadejte platnou e-mailovou adresu.",
+  weak_password:
+    "Slabé heslo. Zvolte silnější heslo (min. 6 znaků), jedno velké písmeno, jedno malé písmeno a jedno číslo.",
+  signup_disabled: "Registrace jsou momentálně vypnuté.",
+  unexpected_error: "Nastala neočekávaná chyba. Zkuste to prosím později.",
+};
 
 export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const searchParams = new URLSearchParams(window.location.search);
-      if (searchParams.get('signupSuccess') === 'true') {
-        alert('Registration successful! Please check your email to confirm your account before logging in.');
-      }
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get('signupSuccess') === 'true') {
+      alert('Registrace úspěšná! Zkontrolujte svůj e-mail pro potvrzení účtu.');
     }
   }, []);
 
@@ -23,24 +31,27 @@ export default function RegisterPage() {
     const confirmPassword = formData.get('confirmPassword') as string;
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      setError('Hesla se neshodují.');
       return;
     }
 
     const result = await signUp(formData);
     if (result?.error) {
-      setError(result.error);
+      setError(errorMessages[result.error] || errorMessages.unexpected_error);
     }
   };
 
   return (
-    <div className="flex justify-center items-center h-screen bg-gray-100">
-      <form className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 w-96" onSubmit={handleSubmit}>
-        <h2 className="text-2xl font-bold text-center mb-6">Register</h2>
+    <div className="flex flex-col justify-center items-center h-screen bg-gray-100">
+      <form
+        className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 w-96"
+        onSubmit={handleSubmit}
+      >
+        <h2 className="text-2xl font-bold text-center mb-6">Registrace</h2>
 
         {error && (
           <div className="text-red-500 text-sm mb-4 text-center">
-            {error === 'User already registered' ? 'Tento e-mail je již zaregistrován.' : error}
+            {error}
           </div>
         )}
 
@@ -59,7 +70,7 @@ export default function RegisterPage() {
 
         <div className="mb-4">
           <label htmlFor="password" className="block text-gray-700 text-sm font-bold mb-2">
-            Password:
+            Heslo:
           </label>
           <input
             id="password"
@@ -72,7 +83,7 @@ export default function RegisterPage() {
 
         <div className="mb-6">
           <label htmlFor="confirmPassword" className="block text-gray-700 text-sm font-bold mb-2">
-            Confirm Password:
+            Heslo znovu:
           </label>
           <input
             id="confirmPassword"
@@ -90,6 +101,16 @@ export default function RegisterPage() {
           Sign up
         </button>
       </form>
+
+      <p className="text-sm text-gray-600">
+        Máte už účet?{' '}
+        <Link
+          href="/login"
+          className="text-green-600 hover:text-green-800 font-semibold underline underline-offset-2 transition duration-150"
+        >
+          Přihlaste se
+        </Link>
+      </p>
     </div>
   );
 }
