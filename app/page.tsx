@@ -146,20 +146,29 @@ export default function SeriesPage() {
 
   return (
     <div className="relative p-4 max-w-7xl mx-auto">
-      <div className="fixed top-2 right-4 text-sm">
-        {userEmail ? (
-          <>
-            <a href="/notifications" className="text-blue-500 hover:underline">
-              My Recordings
-            </a>
-            <span>Logged in as: {userEmail}</span>
-          </>
-        ) : (
-          <a href="/login" className="text-blue-500 underline">
-            Login
-          </a>
-        )}
-      </div>
+      <div className="fixed top-2 right-4 text-sm space-x-4 flex items-center">
+  {userEmail ? (
+    <>
+      <a href="/notifications" className="text-blue-500 hover:underline">
+        My Recordings
+      </a>
+      <span>Logged in as: {userEmail}</span>
+      <button
+        className="text-red-500 hover:underline"
+        onClick={async () => {
+          await supabase.auth.signOut();
+          setUserEmail(undefined);
+        }}
+      >
+        Logout
+      </button>
+    </>
+  ) : (
+    <a href="/login" className="text-blue-500 underline">
+      Login
+    </a>
+  )}
+</div>
 
       <div className="container mx-auto mt-4">
         <h1 className="text-2xl text-center font-bold mb-6">TV Series by Date</h1>
@@ -219,39 +228,42 @@ export default function SeriesPage() {
       </div>
 
       {selectedSeries && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div
-            className="bg-white p-6 rounded shadow-lg w-96"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="absolute top-2 right-2 text-gray-600"
-              onClick={() => setSelectedSeries(null)}
-            >
-              ✖
-            </button>
-            <h2 className="text-xl font-bold mb-4">{selectedSeries.title}</h2>
-            <p className="mb-2">
-              <strong>Channel:</strong> {channels[selectedSeries.channel_id]?.channel_name}
-            </p>
-            <p className="mb-2">
-              <strong>Description:</strong> {selectedSeries.desc}
-            </p>
-            <p className="mb-2">
-              <strong>Start:</strong> {new Date(selectedSeries.start).toLocaleString()}
-            </p>
-            <p className="mb-2">
-              <strong>End:</strong> {new Date(selectedSeries.end).toLocaleString()}
-            </p>
-            <button
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none"
-              onClick={handleRecordShow}
-            >
-              Record Show
-            </button>
-          </div>
-        </div>
-      )}
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div
+      className="bg-white p-6 rounded shadow-lg w-96 relative"
+      onClick={(e) => e.stopPropagation()}
+    >
+     
+      <h2 className="text-xl font-bold mb-4 flex justify-between items-center">
+        {selectedSeries.title}
+        <button
+          className="ml-2 text-red-500 hover:text-red-700"
+          onClick={() => setSelectedSeries(null)}
+        >
+          ❌
+        </button>
+      </h2>
+      <p className="mb-2">
+        <strong>Channel:</strong> {channels[selectedSeries.channel_id]?.channel_name}
+      </p>
+      <p className="mb-2">
+        <strong>Description:</strong> {selectedSeries.desc}
+      </p>
+      <p className="mb-2">
+        <strong>Start:</strong> {new Date(selectedSeries.start).toLocaleString()}
+      </p>
+      <p className="mb-2">
+        <strong>End:</strong> {new Date(selectedSeries.end).toLocaleString()}
+      </p>
+      <button
+        className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none"
+        onClick={handleRecordShow}
+      >
+        Record Show
+      </button>
+    </div>
+  </div>
+)}
     </div>
   );
 }

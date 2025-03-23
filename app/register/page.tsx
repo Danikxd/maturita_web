@@ -1,16 +1,26 @@
-"use client";
+'use client';
 
-import React from "react";
-import { login  } from "../../actions";
+import React, { useEffect } from 'react';
+import { signUp } from '../../actions';
 
+export default function RegisterPage() {
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      if (searchParams.get('signupSuccess') === 'true') {
+        alert('Registration successful! Please check your email to confirm your account before logging in.');
+      }
+    }
+  }, []);
 
-export default function LoginPage() {
   return (
     <div className="flex justify-center items-center h-screen bg-gray-100">
-      <form className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 w-96" onSubmit={async (e) => { e.preventDefault(); await login(new FormData(e.currentTarget)); }}>
-        <h2 className="text-2xl font-bold text-center mb-6">Login</h2>
-
-        
+      <form className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 w-96" onSubmit={async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        await signUp(formData);
+      }}>
+        <h2 className="text-2xl font-bold text-center mb-6">Register</h2>
 
         <div className="mb-4">
           <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">
@@ -40,9 +50,9 @@ export default function LoginPage() {
 
         <button
           type="submit"
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
+          className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
         >
-          Log in
+          Sign up
         </button>
       </form>
     </div>
