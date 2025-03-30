@@ -217,7 +217,7 @@ export default function NotificationsPage() {
 
   return (
     <div className="flex flex-col items-center py-10 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Your Notifications</h1>
+      <h1 className="text-2xl font-bold text-gray-800 mb-6">Tvoje notifikace</h1>
 
       <button
         className="px-4 py-2 mb-6 bg-blue-500 text-white rounded-md hover:bg-blue-600"
@@ -230,11 +230,11 @@ export default function NotificationsPage() {
           setShowModal(true);
         }}
       >
-        Add Notification
+        Přidat notifikace
       </button>
 
       {loading ? (
-        <p className="text-gray-600">Loading notifications...</p>
+        <p className="text-gray-600">Natáčím notifikace...</p>
       ) : notifications.length > 0 ? (
         <ul className="w-full max-w-2xl bg-white shadow-md rounded-lg p-6 space-y-4">
           {notifications.map((notification) => (
@@ -246,41 +246,41 @@ export default function NotificationsPage() {
                 {notification.title}
               </h2>
               <p className="text-gray-600">
-                Channel:{" "}
+                Kanál:{" "}
                 {
                   channels.find((ch) => ch.id === notification.channel_id)
                     ?.display_name || "Unknown"
                 }
               </p>
               <p className="text-gray-600">
-                Notify Before: {notification.notify_before} days
+                Upozornit: {notification.notify_before} dny dopředu
               </p>
               <button
                 className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 focus:outline-none mr-2"
                 onClick={() => handleEditNotification(notification)}
               >
-                Edit
+                Upravit
               </button>
               <button
                 className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 focus:outline-none"
                 onClick={() => handleDeleteNotification(notification.id)}
               >
-                Delete
+                Odstranit
               </button>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="text-gray-600">No notifications found.</p>
+        <p className="text-gray-600">Žádné notifikace.</p>
       )}
 
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow-lg w-96">
             <h2 className="text-lg font-semibold mb-4">
-              {isEditing ? "Edit Notification" : "Add Notification"}
+              {isEditing ? "Upravit notifikaci" : "Přidat notifikaci"}
             </h2>
-            <label className="block mb-2">Notification Title</label>
+            <label className="block mb-2">Název </label>
             <input
               type="text"
               className="border rounded w-full p-2 mb-4"
@@ -288,14 +288,14 @@ export default function NotificationsPage() {
               onChange={(e) => setNewNotificationTitle(e.target.value)}
             />
 
-            <label className="block mb-2">Select Channel</label>
+            <label className="block mb-2">Vyber kanál</label>
             <select
               className="border rounded w-full p-2 mb-4"
               value={selectedChannel || ""}
               onChange={(e) => setSelectedChannel(Number(e.target.value))}
             >
               <option value="" disabled>
-                -- Select a Channel --
+                -- Vyber kanál --
               </option>
               {[...channels]
                 .sort((a, b) => {
@@ -310,7 +310,7 @@ export default function NotificationsPage() {
                 ))}
             </select>
 
-            <label className="block mb-2">Notify Before (days)</label>
+            <label className="block mb-2">Upozornit před (dny)</label>
             <input
               type="number"
               className="border rounded w-full p-2 mb-4"
@@ -324,13 +324,13 @@ export default function NotificationsPage() {
               className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 mr-2"
               onClick={handleAddOrUpdateNotification}
             >
-              {isEditing ? "Update" : "Add"}
+              {isEditing ? "Upravit" : "Přidat"}
             </button>
             <button
               className="px-4 py-2 bg-gray-300 text-black rounded-md hover:bg-gray-400"
               onClick={() => setShowModal(false)}
             >
-              Cancel
+              Zrušit
             </button>
           </div>
         </div>

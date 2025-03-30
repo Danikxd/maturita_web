@@ -273,7 +273,7 @@ export default function TvChannelsPage() {
             <tr className="bg-gray-200 text-gray-700">
               <th className="border border-gray-300 px-4 py-2 text-left">ID</th>
               <th className="border border-gray-300 px-4 py-2 text-left">
-                Channel Name
+                Jméno kanálu
               </th>
               <th className="border border-gray-300 px-4 py-2 text-left">
                 Display Name

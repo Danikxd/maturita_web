@@ -110,6 +110,7 @@ export default function SeriesPage() {
           {
             channel_id: Number(selectedSeries.channel_id),
             title: selectedSeries.title,
+            notify_before: 1,
           },
           {
             headers: {
@@ -171,7 +172,7 @@ export default function SeriesPage() {
 </div>
 
       <div className="container mx-auto mt-4">
-        <h1 className="text-2xl text-center font-bold mb-6">TV Series by Date</h1>
+        <h1 className="text-2xl text-center font-bold mb-6">Datum</h1>
         <div className="flex justify-center mb-6">
           <DatePicker
             selected={date}
@@ -200,27 +201,24 @@ export default function SeriesPage() {
               </div>
               <ul>
                 {groupedSeries[channelId]?.map((item) => (
-                  <li key={item.id} className="mb-4">
-                    <h5
-                      className="font-bold cursor-pointer text-blue-500"
+                      <li
+                      key={item.id}
+                      className="mb-4 cursor-pointer"
                       onClick={() => setSelectedSeries(item)}
                     >
-                      {item.title}
-                    </h5>
-                    <p className="text-sm text-gray-600 mb-1">
-                      {item.desc
-                        ? item.desc.split(" ").slice(0, 13).join(" ") +
-                          (item.desc.split(" ").length > 13 ? " ..." : "")
-                        : <em>No description available</em>}
-                    </p>
-                    <p className="text-sm">
-                      <strong>Start:</strong> {new Date(item.start).toLocaleString()}
-                    </p>
-                    <p className="text-sm">
-                      <strong>End:</strong> {new Date(item.end).toLocaleString()}
-                    </p>
-                  </li>
-                ))}
+                      <div className="text-sm text-gray-600 mb-1">
+                        {new Date(item.start).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}
+                      </div>
+                      <h5 className="font-semibold text-blue-600 mb-1">
+                        {item.title}
+                      </h5>
+                      <p className="text-sm text-gray-700">
+                        {item.desc
+                          ? item.desc.split(" ").slice(0, 20).join(" ") + (item.desc.split(" ").length > 20 ? " ..." : "")
+                          : ""}
+                      </p>
+                    </li>
+                  ))}
               </ul>
             </div>
           ))}
@@ -244,22 +242,22 @@ export default function SeriesPage() {
         </button>
       </h2>
       <p className="mb-2">
-        <strong>Channel:</strong> {channels[selectedSeries.channel_id]?.channel_name}
+        <strong>Kanál:</strong> {channels[selectedSeries.channel_id]?.channel_name}
       </p>
       <p className="mb-2">
-        <strong>Description:</strong> {selectedSeries.desc}
+        <strong>Popis pořadu:</strong> {selectedSeries.desc}
       </p>
       <p className="mb-2">
-        <strong>Start:</strong> {new Date(selectedSeries.start).toLocaleString()}
+        <strong>Začátek:</strong> {new Date(selectedSeries.start).toLocaleString("cs-CZ")}
       </p>
       <p className="mb-2">
-        <strong>End:</strong> {new Date(selectedSeries.end).toLocaleString()}
+        <strong>Konec:</strong> {new Date(selectedSeries.end).toLocaleString("cs-CZ")}
       </p>
       <button
         className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none"
         onClick={handleRecordShow}
       >
-        Record Show
+        Nastavit upozorňění
       </button>
     </div>
   </div>
