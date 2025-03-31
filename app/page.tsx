@@ -121,12 +121,12 @@ export default function SeriesPage() {
         );
 
         if (response.status === 201) {
-          alert("Show successfully recorded!");
+          alert("Notifikace přidána!");
           setSelectedSeries(null);
         }
       } catch (error) {
-        console.error("Error recording show:", error);
-        alert("Failed to record the show. Please try again.");
+        console.error("Error recording notification:", error);
+        alert("Nepodařila se přidat notifikace zkuste to prosím později.");
       }
     }
   };
@@ -151,9 +151,9 @@ export default function SeriesPage() {
   {userEmail ? (
     <>
       <a href="/notifications" className="text-blue-500 hover:underline">
-        My Recordings
+        Moje nahrávky
       </a>
-      <span>Logged in as: {userEmail}</span>
+      <span>Přihlášen jako: {userEmail}</span>
       <button
         className="text-red-500 hover:underline"
         onClick={async () => {
@@ -161,12 +161,12 @@ export default function SeriesPage() {
           setUserEmail(undefined);
         }}
       >
-        Logout
+        Odhlásit se
       </button>
     </>
   ) : (
     <a href="/login" className="text-blue-500 underline">
-      Login
+      Přihlásit se
     </a>
   )}
 </div>

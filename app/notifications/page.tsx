@@ -103,7 +103,7 @@ export default function NotificationsPage() {
 
       if (error || !session) {
         console.error("Error retrieving session:", error);
-        alert("Failed to authenticate. Please log in again.");
+        alert("Nepodařilo se ověřit uživatele. Přihlaste se prosím znovu.");
         router.push("/login");
         return;
       }
@@ -116,21 +116,21 @@ export default function NotificationsPage() {
       });
 
       if (response.status === 200) {
-        alert("Notification successfully deleted!");
+        alert("Notifikace odstraněna!");
         setNotifications((prev) => prev.filter((item) => item.id !== id));
       } else {
         console.error("Error deleting notification:", response);
-        alert("Failed to delete the notification. Please try again.");
+        alert("Nepodařilo se odstranit notifikaci, zkuste to prosím později.");
       }
     } catch (error) {
       console.error("Error deleting notification:", error);
-      alert("Failed to delete the notification. Please try again.");
+      alert("Nepodařilo se odstranit notifikaci, zkuste to prosím později.");
     }
   };
 
   const handleAddOrUpdateNotification = async () => {
     if (!newNotificationTitle || !selectedChannel || notifyBefore < 1 || notifyBefore > 14) {
-      alert("Please fill in all fields and ensure notify_before is between 1 and 14.");
+      alert("Vyplňte prosím všechny povinné údaje.");
       return;
     }
 
@@ -142,7 +142,7 @@ export default function NotificationsPage() {
 
       if (error || !session) {
         console.error("Error retrieving session:", error);
-        alert("Failed to authenticate. Please log in again.");
+        alert("Nepodařilo se ověřit uživatele. Přihlaste se prosím znovu.");  
         router.push("/login");
         return;
       }
@@ -170,8 +170,8 @@ export default function NotificationsPage() {
       if (response.status === 201 || response.status === 200) {
         alert(
           isEditing
-            ? "Notification successfully updated!"
-            : "Notification successfully added!"
+            ? "Notiffikace přidána!"
+            : "Notification přidána"
         );
 
         setShowModal(false);
@@ -184,24 +184,24 @@ export default function NotificationsPage() {
         fetchNotifications();
       } else {
         console.error(
-          isEditing ? "Error updating notification:" : "Error adding notification:",
+          isEditing ? "Chyba v aktualizaci notifikace" : "Chyba v přidávání notifikace",
           response
         );
         alert(
           isEditing
-            ? "Failed to update the notification. Please try again."
-            : "Failed to add the notification. Please try again."
+            ? "Nepodařilo se přidat notifikaci, zkuste to prosím později."
+            : "Nepodařilo se přidat notifikaci, zkuste to prosím později."
         );
       }
     } catch (error) {
       console.error(
-        isEditing ? "Error updating notification:" : "Error adding notification:",
+        isEditing ? "Chyba v přidávání notifikace" : "Chyba v aktualizaci notifikace",
         error
       );
       alert(
         isEditing
-          ? "Failed to update the notification. Please try again."
-          : "Failed to add the notification. Please try again."
+          ? "Chyba v aktualizaci notifikace, zkuste to prosím později."
+          : "Chyba v přidávání notifikace, zkuste to prosím později."
       );
     }
   };
